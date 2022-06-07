@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "liblaravel.fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "liblaravel.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "liblaravel.selectorLabels" . | nindent 8 }}
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/role: {{ quote .Values.vault.role }}
+        vault.hashicorp.com/agent-init-first: "true"
+        vault.hashicorp.com/agent-inject-secret-env: {{ quote .Values.vault.env }}
+        vault.hashicorp.com/agent-inject-template-env: |
+          {{`{{ with secret `}}{{ quote .Values.vault.env }}{{` }}
+            {{ range $key, $value := .Data.data  }}
+            export {{ $key }}="{{ $value }}"
+            {{ end }}
+          {{ end }}`}}
+        vault.hashicorp.com/agent-inject-secret-iam: {{ quote .Values.vault.iam }}
+        vault.hashicorp.com/agent-inject-template-iam: |
+          {{`{{ with secret `}}{{ quote .Values.vault.iam }}{{` -}}
+            [default]
+            aws_access_key_id="{{ .Data.access_key }}"
+            aws_secret_access_key="{{ .Data.secret_key }}"
+          {{- end }}`}}
+        vault.hashicorp.com/agent-inject-secret-creds: {{ quote .Values.vault.creds }}
+        vault.hashicorp.com/agent-inject-template-creds: |
+          {{`{{ with secret `}}{{ quote .Values.vault.creds }}{{` -}}
+            [client]
+            user={{ .Data.username }}
+            password={{ .Data.password }}`}}
+            host={{ .Values.database.host }}{{`
+          {{- end }}`}}
+        vault.hashicorp.com/agent-inject-secret-dns: {{ quote .Values.vault.dns }}
+        vault.hashicorp.com/agent-inject-template-dns: |
+          {{`{{ with secret `}}{{ quote .Values.vault.dns }}{{` -}}
+            mysql:`}}dbname={{ .Values.database.name }};host={{ .Values.database.host }};{{`user={{ .Data.username }};password={{ .Data.password }};
+          {{- end }}`}}
+    spec:
+      serviceAccountName: {{ quote .Values.vault.sa }}
+      initContainers:
+        # Init: Mix & DB
+        - name: {{ required "Name Required" .Chart.Name }}-init
+          image: "{{ required "image.registry Required" .Values.image.registry }}/{{ required "image.repository Required" .Values.image.repository }}:{{ required "image.tag Required" .Values.image.tag }}"
+          args: [ "init:production" ]
+          envFrom:
+            - configMapRef:
+                name: "{{ include "liblaravel.fullname" . }}-env"
+          volumeMounts:
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
+      containers:
+        - name: {{ required "Name Required" .Chart.Name }}
+          image: "{{ required "image.registry Required" .Values.image.registry }}/{{ required "image.repository Required" .Values.image.repository }}:{{ required "image.tag Required" .Values.image.tag }}"
+          args: [ "server:production" ]
+          ports:
+            - containerPort: {{ .Values.image.port }}
+          envFrom:
+            - configMapRef:
+                name: "{{ include "liblaravel.fullname" . }}-env"
+#          resources:
+#            limits:
+#              cpu: 500m
+#            requests:
+#              cpu: 100m
+        - name: {{ required "Name Required" .Chart.Name }}-queue
+          image: "{{ required "image.registry Required" .Values.image.registry }}/{{ required "image.repository Required" .Values.image.repository }}:{{ required "image.tag Required" .Values.image.tag }}"
+          args: [ "queue:production" ]
+          envFrom:
+            - configMapRef:
+                name: "{{ include "liblaravel.fullname" . }}-env"
+#          resources:
+#            limits:
+#              cpu: 500m
+#            requests:
+#              cpu: 50m
+      volumes:
+        - name: mysql-initdb
+          configMap:
+            name: {{ include "liblaravel.fullname" . }}-initdb

@@ -1,0 +1,28 @@
+environment: production
+
+image:
+  registry: #required
+  repository: #required
+  pullPolicy: IfNotPresent
+  tag: #required
+  port: 80
+
+service:
+  port: 80
+
+ingress:
+  host: #required
+
+database:
+  host: #required
+  name: #required
+
+vault:
+  enabled: false
+  role: kamma-qa-role
+  sa: kamma-qa-vault-auth
+  env: kv/data/kamma-qa-env
+  iam: aws/creds/kamma-qa-access
+  creds: database/creds/kamma-qa-access
+  dns: database/creds/kamma-qa-access
+
