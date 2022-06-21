@@ -13,8 +13,8 @@ kamma-charts` to see the charts.
 
 To install the <chart-name> chart:
 
-    helm install my-<chart-name> kamma-charts/<chart-name>
+    helm install kamma-<chart-name> kamma-charts/<chart-name>
 
 To uninstall the chart:
 
-    helm uninstall my-<chart-name>
+    helm uninstall kamma-<chart-name>
