@@ -3,6 +3,16 @@ entries:
   kamma-laravel:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2022-06-23T10:33:52.600432438Z"
+    description: A Helm chart for Kubernetes
+    digest: 271263ab45ad85e89d1c831eb7757b1f60a0a01c660e73400a1be2094342a5b9
+    name: kamma-laravel
+    type: application
+    urls:
+    - https://github.com/KammaData/kamma-charts/releases/download/kamma-laravel-0.0.3/kamma-laravel-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2022-06-23T09:56:03.369478197Z"
     description: A Helm chart for Kubernetes
     digest: 71de85105327db71eb8e34cb81470d621f3325dd0a9d17cb542a22e27445e757
